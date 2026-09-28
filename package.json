@@ -17,6 +17,7 @@
   "scripts": {
     "start": "vite --host",
     "build": "vite build && tsc --emitDeclarationOnly --declaration",
+    "prepare": "npm run build",
     "preview": "vite preview"
   },
   "main": "./dist/annotorious-plugin-tools.js",
