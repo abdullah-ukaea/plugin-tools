@@ -227,6 +227,15 @@
       cy={y + h / 2} 
       rx={w / 2} 
       ry={h / 2} />
+
+    <circle
+      cx={x + w / 2}
+      cy={y + h / 2}
+      r={2 / viewportScale}
+      fill="white"
+      stroke="black"
+      stroke-width={1 / viewportScale}
+      pointer-events="none" />
   {/if}
 </g>
 

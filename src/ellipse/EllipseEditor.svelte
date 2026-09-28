@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Editor, Handle } from '@annotorious/annotorious/src';
-  import { getMaskDimensions } from '@annotorious/annotorious';
+  import { Editor } from '@annotorious/annotorious/src';
+  import { getMaskDimensions, ShapeType } from '@annotorious/annotorious';
   import type { Ellipse, Shape, Transform } from '@annotorious/annotorious';
   
   export let shape: Ellipse;
@@ -11,64 +11,34 @@
 
   $: geom = shape.geometry;
 
-  const editor = (ellipse: Shape, handle: string, delta: [number, number]) => {
-    const initialBounds = ellipse.geometry.bounds;
+  const isEllipse = (shape: Shape): shape is Ellipse => {
+    const { geometry } = shape;
+    return shape.type === ShapeType.ELLIPSE &&
+      'cx' in geometry && typeof geometry.cx === 'number' &&
+      'cy' in geometry && typeof geometry.cy === 'number' &&
+      'rx' in geometry && typeof geometry.rx === 'number' &&
+      'ry' in geometry && typeof geometry.ry === 'number';
+  };
 
-    let [x0, y0] = [initialBounds.minX, initialBounds.minY];
-    let [x1, y1] = [initialBounds.maxX, initialBounds.maxY];
+  const editor = (shape: Shape, _handle: string, delta: [number, number]) => {
+    if (!isEllipse(shape)) return shape;
+
+    const { geometry } = shape;
+    const { bounds } = geometry;
 
     const [dx, dy] = delta;
 
-    if (handle === 'SHAPE') {
-      x0 += dx;
-      x1 += dx;
-      y0 += dy;
-      y1 += dy;
-    } else {
-      switch (handle) {
-        case 'TOP': {
-          y0 += dy;
-          break;
-        }
-
-        case 'BOTTOM': {
-          y1 += dy;
-          break;
-        }
-
-        case 'LEFT': {
-          x0 += dx;
-          break;
-        }
-
-        case 'RIGHT': {
-          x1 += dx;
-          break;
-        }
-      }
-    }
-
-    const x = Math.min(x0, x1);
-    const y = Math.min(y0, y1);
-    const w = Math.abs(x1 - x0);
-    const h = Math.abs(y1 - y0);
-
-    const cx = (x0 + x1) / 2;
-    const cy = (y0 + y1) / 2;
-
-    const rx = w / 2;
-    const ry = h / 2;
-
     return {
-      ...ellipse,
+      ...shape,
       geometry: {
-        ...ellipse.geometry,
-        cx, cy, rx, ry,
+        ...geometry,
+        cx: geometry.cx + dx,
+        cy: geometry.cy + dy,
         bounds: {
-          minX: x,
-          minY: y,
-          maxX: x + w,
-          maxY: y + h
+          minX: bounds.minX + dx,
+          minY: bounds.minY + dy,
+          maxX: bounds.maxX + dx,
+          maxY: bounds.maxY + dy
         }
       }
     };
@@ -106,29 +76,14 @@
     on:pointerdown={grab('SHAPE')}
     cx={geom.cx} cy={geom.cy} rx={geom.rx} ry={geom.ry} />
 
-  <Handle 
-    class="a9s-corner-top"
-    on:pointerdown={grab('TOP')}
-    x={geom.cx} y={geom.cy - geom.ry} 
-    scale={viewportScale} />
-
-  <Handle 
-    class="a9s-corner-handle-right"
-    on:pointerdown={grab('RIGHT')}
-    x={geom.cx + geom.rx} y={geom.cy} 
-    scale={viewportScale} />
-  
-  <Handle 
-    class="a9s-corner-handle-bottom"
-    on:pointerdown={grab('BOTTOM')}
-    x={geom.cx} y={geom.cy + geom.ry} 
-    scale={viewportScale} />
-    
-  <Handle 
-    class="a9s-corner-handle-left"
-    on:pointerdown={grab('LEFT')}
-    x={geom.cx - geom.rx} y={geom.cy} 
-    scale={viewportScale} />
+  <circle
+    cx={geom.cx}
+    cy={geom.cy}
+    r={2 / viewportScale}
+    fill="white"
+    stroke="black"
+    stroke-width={1 / viewportScale}
+    pointer-events="none" />
 </Editor>
 
 <style>
